@@ -20,13 +20,16 @@ const supportedLanguages = [
   { code: "zh", name: "Chinese" },
 ];
 
-router.post("/", async (req: Request, res: Response): Promise<void> => {
+router.post("/", async (req: Request, res: Response): Promise<any> => {
   const { word, source = "en", target = "es" } = req.body;
   const apiKey = process.env.DEEPL_API_KEY;
 
-  if (!word || !apiKey) {
-    res.status(400).json({ error: "Missing word or DeepL API key" });
-    return;
+  if (typeof word !== "string" || !word.trim()) {
+    return res.status(400).json({ error: "Missing or invalid 'word'" });
+  }
+  
+  if (!apiKey) {
+    return res.status(500).json({ error: "Missing DeepL API key" });
   }
 
   try {
@@ -49,7 +52,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
     const translatedText = response.data.translations?.[0]?.text || "";
     res.json({ translatedText });
   } catch (err: any) {
-    console.error("🛑 DeepL translation error:", err.response?.data || err.message);
+    console.error("🛑 DeepL error:", { word, source, target, error: err.response?.data || err.message });
     res.status(500).json({
       error: "Translation failed",
       details: err.response?.data?.message || err.message,
