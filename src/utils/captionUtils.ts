@@ -22,3 +22,21 @@ export function parseCaptionXml(xml: string): TranscriptLine[] {
 
   return lines;
 }
+
+// New: robust parser for YouTube fmt=json3 events
+export function parseCaptionJson3(json: any): TranscriptLine[] {
+  const out: TranscriptLine[] = [];
+  if (!json || !Array.isArray(json.events)) return out;
+
+  for (const ev of json.events) {
+    if (!ev || !Array.isArray(ev.segs)) continue;
+    const text = ev.segs.map((s: any) => s?.utf8 ?? "").join("").trim();
+    if (!text) continue;
+
+    const start = (ev.tStartMs ?? 0) / 1000;
+    const duration = (ev.dDurationMs ?? 0) / 1000 || 1.5;
+    out.push({ start, duration, text });
+  }
+
+  return out;
+}
